@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block the_body %}
+
+Please register:
+
+<form action='/processreg' method='POST'>
+
+User-id: <input type='text' name='userid'><br>
+Email address: <input type='email' name='email'><br>
+Password: <input type='password' name='passwd'><br>
+Password (again): <input type='password' name='passwd2'><br>
+<input type='submit' value='Register'>
+
+</form>
+
+{% endblock %}
