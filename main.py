@@ -1,4 +1,3 @@
-
 #   10% of final grade.
 #   Due Wed. 4th March 2015 - end of the day.
 #   All code in Python, GAE, and webapp2.
@@ -6,11 +5,12 @@
 
 
 import os
-
+import cgi
 import webapp2
 import jinja2
 
 from google.appengine.ext import ndb
+from gaesessions import get_current_session
 
 class UserDetail(ndb.Model):
     userid = ndb.StringProperty()
@@ -26,14 +26,39 @@ JINJA = jinja2.Environment(
 
 class LoginHandler(webapp2.RequestHandler):
     def get(self):
-        # Display the LOGIN form.
+        session = get_current_session()
+        userid = cgi.escape(session.get('userid',''), quote = True)
+        passwd = cgi.escape(session.get('passwd',''), quote = True)
+        message = cgi.escape(session.get('message',''), quote = True)
+
+        template = JINJA.get_template('login.html')
+        self.response.write(template.render(
+            { 'the_title': 'Welcome to the Registration Page'} 
+        ) % (message,userid,passwd))
         pass
 
     def post(self):
         # Check that a login and password arrived from the FORM.
+        userid = self.request.get('userid')
+        passwd = self.request.get('passwd')
+        session = get_current_session()
+        session['userid'] = userid
+        session['passwd'] = passwd
+        session['message'] = ''
+
+        if userid == '' or passwd == '':
+            session['message'] = "User id and password are mandatory"
+            self.redirect('/login')
+            #self.response.write("User id or password was blank")
+
+        else:
+            self.response.out.write(userid + " ")
+            self.response.out.write(passwd)
+            
+
         # Lookup login ID in "confirmed" datastore.
         # Check for password match.
-        # Set the user as logged in and let them have access to /page1, /page2, and /page3.  SESSIONs.
+        # Set the user as logged in and let them have access to /page1, /page2, and /page3.  SESSIONS.
         # What if the user has forgotten their password?  Provide a password-reset facility/form.
         pass
 
@@ -91,7 +116,7 @@ app = webapp2.WSGIApplication([
     ('/', LoginHandler),
     ('/login', LoginHandler),
     ('/processlogin', LoginHandler),
-    # Next three URLs are only available to logged-in users.
+    #Next three URLs are only available to logged-in users.
     ('/page1', Page1Handler),
     ('/page2', Page2Handler),
     ('/page3', Page3Handler),
