@@ -7,9 +7,9 @@ Please register:
 <form action='/register' method='POST'>
 
 User-id: <input type='text' name='userid' value="%s"><br>
-Email address: <input type='email' name='email' value="%s"><br>
-Password: <input type='password' name='passwd' value="%s"><br>
-Password (again): <input type='password' name='passwd2' value="%s"><br>
+Email address: <input type='email' name='email'><br>
+Password: <input type='password' name='passwd'><br>
+Password (again): <input type='password' name='passwd2'><br>
 <input type='submit' value='Register'>
 <p style="color: red">%s</p>
 

@@ -150,7 +150,7 @@ class RegisterHandler(webapp2.RequestHandler):
             person.put()
             self.redirect('/register')
 
-        if(result1 != [] or result2 != []):
+        if(result != []):
             session['message'] = "User ID already exists"            
             self.redirect('/register')
         

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block the_body %}
+
+<form action='/page1' method='POST'>
+</form>
+
+{% endblock %}

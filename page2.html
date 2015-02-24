@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block the_body %}
+
+<form action='/page2' method='POST'>
+<input type='button' value='Page1' onClick='window.location.assign("/page1")'>
+<input type='button' value='Page3' onClick='window.location.assign("/page3")'>
+</form>
+
+{% endblock %}
