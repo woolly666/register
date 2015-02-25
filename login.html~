@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block the_body %}
+
+<form action='/login' method='POST'>
+
+User-id: <input type='text' name='userid' value="%s"><br>
+Password: <input type='password' name='passwd' value="%s"><br>
+<input type='submit' value='Login'>
+<input type='button' value='Register' onClick='window.location.assign("/register")'>
+<p style="color: red">%s</p>
+</form>
+
+<form action='/logout' method='POST'>
+<input type='submit' value='Logout'>
+</form>
+
+{% endblock %}

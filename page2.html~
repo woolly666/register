@@ -7,8 +7,4 @@
 <input type='button' value='Page3' onClick='window.location.assign("/page3")'>
 </form>
 
-<form action='/logout' method='POST'>
-<input type='submit' value='Logout'>
-</form>
-
 {% endblock %}

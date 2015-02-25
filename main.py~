@@ -78,6 +78,8 @@ class LoginHandler(webapp2.RequestHandler):
         # What if the user has forgotten their password?  Provide a password-reset facility/form.
         pass
 
+# We need to provide for LOGOUT.
+
 #confirm account, put in the confirmed store and remove from pending store
 class ConfirmHandler(webapp2.RequestHandler):
     def get(self):
