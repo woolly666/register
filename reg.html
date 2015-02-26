@@ -2,17 +2,30 @@
 
 {% block the_body %}
 
-Please register:
-
 <form action='/register' method='POST'>
-
-User-id: <input type='text' name='userid' value="%s"><br>
-Email address: <input type='email' name='email' value="%s"><br>
-Password: <input type='password' name='passwd' value="%s"><br>
-Password (again): <input type='password' name='passwd2' value="%s"><br>
-<input type='submit' value='Register'>
+<label>Please register:</label>
+<table align="center">
+<tr>
+<td align="right">User-id:</td>
+<td align="left"><input type='text' name='userid' value="%s"/></td>
+</tr>
+<tr>
+<td align="right">Email address:</td> 
+<td align="left"><input type='email' name='email' value="%s"/></td>
+</tr>
+<tr>
+<td align="right">Password:</td> 
+<td align="left"><input type='password' name='passwd' value="%s"/></td>
+</tr>
+<tr>
+<td align="right">Password (again):</td>
+<td align="left"><input type='password' name='passwd2' value="%s"/></td>
+</tr>
+<tr>
+<td align="right"><input type='submit' value='Register'></td>
+<td align="left"><input type='button' value='Login' onClick='window.location.assign("/login")'></td>
 <p style="color: red">%s</p>
-
+</tr>
 </form>
 
 {% endblock %}
