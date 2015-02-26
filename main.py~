@@ -174,25 +174,18 @@ class RegisterHandler(webapp2.RequestHandler):
         session['message'] = ''
  
         # Check if the data items from the POST are empty.
-        if userid == '':
-            errorList.append("\nUser ID cannot be empty")
-
-        if email == '':
-            errorList.append("\nEmail cannot be empty")
-
-        if passwd == '':
-            errorList.append("\nPassword cannot be empty")
-
-        if passwd2 == '':
-            errorList.append("\nPassword(again) cannot be empty")
-
+        if userid == '' or email == '' or passwd == '' or passwd2 == '':
+            session['message'] = "Fields cannot be empty"
+            self.redirect('/register')
         # Check if passwd == passwd2.
         if passwd != passwd2:
-            errorList.append("\nPasswords do not mach")
+            session['message'] = "Passwords do not mach"
+            self.redirect('/register')
 
         # Is the password too simple?
         if len(passwd) < length: # check length
-            errorList.append("\nPassword is too short must be at least 5 characters long")
+            session['message'] = "Password is too short must be at least 5 characters long"
+            self.redirect('/register')
 
         for i in passwd:
             if i.isupper(): #check for at least 1 uppercase
@@ -201,10 +194,12 @@ class RegisterHandler(webapp2.RequestHandler):
                 lower = True
 
         if upper == False:
-            errorList.append("Password must contain at least 1 uppercase letter")
+            session['message'] = "Password must contain at least 1 uppercase letter"
+            self.redirect('/register')
 
         if lower == False:
-            errorList.append("Password must contain at least 1 lowercase letter")
+            session['message'] = "Password must contain at least 1 lowercase letter"
+            self.redirect('/register')
 
 
         # Does the userid already exist in the "pending" datastore or in "confirmed"?        
