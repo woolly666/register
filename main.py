@@ -57,9 +57,17 @@ class LoginHandler(webapp2.RequestHandler):
         session['passwd'] = passwd
         session['message'] = ''
 
-        if userid == '' or passwd == '':
-            session['message'] = "User id and password are mandatory"
-            self.redirect('/login')
+        if userid == '' and passwd == '':
+            session['message'] = 'User ID and Password are mandatory'
+            self.redirect('/login') 
+
+        elif userid == '':
+            session['message'] = 'User id is mandatory'
+            self.redirect('/login')         
+
+        elif passwd == '':
+            session['message'] = 'Password is mandatory'
+            self.redirect('/login') 
 
         else:
             # Lookup login ID in "confirmed" datastore and Check for password match..
@@ -70,10 +78,8 @@ class LoginHandler(webapp2.RequestHandler):
                 self.redirect('/page1')
 
             else:
-                session['message'] = "User id or password is invalid"
-                self.redirect('/login')
-                
-            
+                session['message'] = 'Not a valid user!'
+                self.redirect('/login')             
         # Set the user as logged in and let them have access to /page1, /page2, and /page3.  SESSIONS.
         # What if the user has forgotten their password?  Provide a password-reset facility/form.
         pass

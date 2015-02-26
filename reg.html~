@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block the_body %}
+
+<form action='/register' method='POST'>
+<label>Please register:</label>
+<table align="center">
+<tr>
+<td align="right">User-id:</td>
+<td align="left"><input type='text' name='userid' /></td>
+</tr>
+<tr>
+<td align="right">Email address:</td> 
+<td align="left"><input type='email' name='email' value="%s"/></td>
+</tr>
+<tr>
+<td align="right">Password:</td> 
+<td align="left"><input type='password' name='passwd' value="%s"/></td>
+</tr>
+<tr>
+<td align="right">Password (again):</td>
+<td align="left"><input type='password' name='passwd2' value="%s"/></td>
+</tr>
+<tr>
+<td align="right"><input type='submit' value='Register'></td>
+<td align="left"><input type='button' value='Login' onClick='window.location.assign("/login")'></td>
+<P style="color: red">%s</P>
+</tr>
+</form>
+
+{% endblock %}
