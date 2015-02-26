@@ -167,6 +167,7 @@ class RegisterHandler(webapp2.RequestHandler):
         passwd = self.request.get('passwd')
         passwd2 = self.request.get('passwd2')
         session = get_current_session()
+        errorList = []
         session['userid'] = userid
         session['email'] = email
         session['passwd'] = passwd
@@ -214,8 +215,7 @@ class RegisterHandler(webapp2.RequestHandler):
         result2 = idExistC.fetch()
 
         # Add registration details to "pending" datastore.
-        if(result1 == [] and result2 == [] and upper == True and lower == True and len(passwd) >= length):
-            session['message'] = "Success check your email"
+        if(result1 == [] and result2 == [] and  userid != ""  and email != ""  and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):               
             person = UserDetailP()
             person.userid = userid
             person.email = email
@@ -233,11 +233,15 @@ class RegisterHandler(webapp2.RequestHandler):
             http://a2-c00157339.appspot.com/verify?type=""" + person.userid
 
             mail.send_mail(sender_address, user_address, subject, body)
+            errorList.append("Success check your email")
+            session.terminate()
             self.redirect('/register')
 
         if(result1 != [] or result2 != []):
-            session['message'] = "User ID already exists"            
-            self.redirect('/register')
+            errorList.append("User ID already exists")
+
+        session['message'] = ','.join(errorList)
+        self.redirect('/register')
         
 
 app = webapp2.WSGIApplication([
