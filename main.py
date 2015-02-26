@@ -108,30 +108,42 @@ class ConfirmHandler(webapp2.RequestHandler):
 
 class LogoutHandler(webapp2.RequestHandler): #logout and clear the session
     def post(self):
-       session = get_current_session()
-       session.clear()
+       session = get_current_session() 
+       session.terminate()     
        self.redirect('/login') 
 
 class Page1Handler(webapp2.RequestHandler):
     def get(self):
-        template = JINJA.get_template('page1.html')
-        self.response.write(template.render(
-            { 'the_title': 'This is page 1'} 
-        ))
+        session = get_current_session()
+        if 'userid' and 'passwd' in session:
+            template = JINJA.get_template('page1.html')
+            self.response.write(template.render(
+                    { 'the_title': 'This is page 1'} 
+            ))
+        else:
+            self.redirect('/login')
 
 class Page2Handler(webapp2.RequestHandler):
     def get(self):
-        template = JINJA.get_template('page2.html')
-        self.response.write(template.render(
-            { 'the_title': 'This is page 2'} 
-        ))
+        session = get_current_session()
+        if 'userid' and 'passwd' in session:
+            template = JINJA.get_template('page2.html')
+            self.response.write(template.render(
+                    { 'the_title': 'This is page 2'} 
+            ))
+        else:
+            self.redirect('/login')
 
 class Page3Handler(webapp2.RequestHandler):
     def get(self):
-        template = JINJA.get_template('page3.html')
-        self.response.write(template.render(
-            { 'the_title': 'This is page 3'} 
-        ))
+        session = get_current_session()
+        if 'userid' and 'passwd' in session:
+            template = JINJA.get_template('page3.html')
+            self.response.write(template.render(
+                    { 'the_title': 'This is page 3'} 
+            ))
+        else:
+            self.redirect('/login')
 
 class RegisterHandler(webapp2.RequestHandler):
     def get(self):
@@ -213,7 +225,7 @@ class RegisterHandler(webapp2.RequestHandler):
             Thank you for creating an account! Please confirm your email address by
             clicking on the link below:
 
-            http://localhost:8080/verify?type=""" + person.userid
+            http://a2-c00157339.appspot.com/verify?type=""" + person.userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             self.redirect('/register')
