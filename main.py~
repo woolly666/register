@@ -307,8 +307,8 @@ class RegisterHandler(webapp2.RequestHandler):
 
 
         # Does the userid already exist in the "pending" datastore or in "confirmed"?        
-        idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
-        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", userid)
+        idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", session['userid'])
+        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", session['userid'])
         result1 = idExistP.fetch()
         result2 = idExistC.fetch()
 
