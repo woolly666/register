@@ -143,7 +143,7 @@ class ResetHandler(webapp2.RequestHandler):
             sender_address = "Awsome Support <leewolohan20@gmail.com>"
             user_address = "Email <" + session['email'] + ">"
             subject = "Reset your password"
-            body = """http://localhost:8080/change?type=""" + userid
+            body = """http://a2-c00157339.appspot.com/change?type=""" + userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             session.terminate()
@@ -285,6 +285,7 @@ class RegisterHandler(webapp2.RequestHandler):
         digit = False
         uspace = False
         pspace = False
+        espace = False
         upper = False
         lower = False
         userid = cgi.escape(self.request.get('userid'))
@@ -330,6 +331,10 @@ class RegisterHandler(webapp2.RequestHandler):
             if i == ' ': #check for at least 1 digit
                 uspace = True
 
+        for i in email:
+            if i == ' ': #check for at least 1 digit
+                espace = True
+
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
 
@@ -345,6 +350,9 @@ class RegisterHandler(webapp2.RequestHandler):
         if pspace == True:
             errorList.append("Password cannot have a space")
 
+        if espace == True:
+            errorList.append("Email cannot have a space")
+
 
         # Does the userid already exist in the "pending" datastore or in "confirmed"?        
         idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
@@ -353,7 +361,7 @@ class RegisterHandler(webapp2.RequestHandler):
         result2 = idExistC.fetch()
 
         # Add registration details to "pending" datastore.
-        if(result1 == [] and result2 == [] and  userid != ""  and email != "" and uspace == False and pspace == False and passwd == passwd2 and upper == True and lower == True and digit == True and len(passwd) >= length):               
+        if(result1 == [] and result2 == [] and  userid != ""  and email != "" and uspace == False and espace == False and pspace == False and passwd == passwd2 and upper == True and lower == True and digit == True and len(passwd) >= length):               
             person = UserDetailP()
             person.userid = userid
             person.email = email
@@ -368,7 +376,7 @@ class RegisterHandler(webapp2.RequestHandler):
             Thank you for creating an account! Please confirm your email address by
             clicking on the link below:
 
-            http://localhost:8080/verify?type=""" + person.userid
+            http://a2-c00157339.appspot.com/verify?type=""" + person.userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             errorList.append("Success check your email")
