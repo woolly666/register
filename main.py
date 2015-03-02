@@ -8,6 +8,7 @@ import os
 import cgi
 import webapp2
 import jinja2
+import time
 
 from google.appengine.ext import ndb
 from google.appengine.api import mail
@@ -87,7 +88,11 @@ class LoginHandler(webapp2.RequestHandler):
 #confirm account, put in the confirmed store and remove from pending store
 class ConfirmHandler(webapp2.RequestHandler):
     def get(self):
-        userid = self.request.get('type')
+        session = get_current_session()
+        template = JINJA.get_template('login.html')
+        userid = cgi.escape(self.request.get('type'), quote = True)
+        passwd = cgi.escape('', quote = True)
+        message = ''
         idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
         result = idExistP.fetch()
 
@@ -102,15 +107,23 @@ class ConfirmHandler(webapp2.RequestHandler):
             personC.email = email
             personC.passwd = passwd
             personC.put()
+            passwd = ''
             
             pending = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
             entry = pending.fetch()
             for i in entry:
                 i.key.delete()
-            self.response.write('Confirmed you may now login')
+            message = 'Confirmed you may now login'
+            self.response.write(template.render(
+                { 'the_title': 'Welcome to the Login Page'} 
+            )% (userid,passwd,message))
+            
 
         else:
-            self.response.write('Already confirmed or not a valid link')
+            message = 'Already confirmed or not a valid link'
+            self.response.write(template.render(
+                { 'the_title': 'Welcome to the Login Page'} 
+            )% (userid,passwd,message))
 
 class ResetHandler(webapp2.RequestHandler):
     def post(self):
@@ -130,10 +143,11 @@ class ResetHandler(webapp2.RequestHandler):
             sender_address = "Awsome Support <leewolohan20@gmail.com>"
             user_address = "Email <" + session['email'] + ">"
             subject = "Reset your password"
-            body = """http://a2-c00157339.appspot.com/change?type=""" + userid
+            body = """http://localhost:8080/change?type=""" + userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             session.terminate()
+            session['message'] = 'Check your email'
             self.redirect('/login')
 
         else:
@@ -145,7 +159,7 @@ class ResetHandler(webapp2.RequestHandler):
         message = cgi.escape(session.get('message',''), quote = True)
         template = JINJA.get_template('reset1.html')
         self.response.write(template.render(
-            { 'the_title': 'Welcome to the Login Page'} 
+            { 'the_title': 'Welcome to the Reset Page'} 
         )% (message))
 
 class Reset2Handler(webapp2.RequestHandler):
@@ -165,6 +179,7 @@ class Reset2Handler(webapp2.RequestHandler):
     def post(self):
         session = get_current_session()
         length = 5
+        Digit = False
         upper = False
         lower = False
         passwd = self.request.get('passwd')
@@ -191,12 +206,17 @@ class Reset2Handler(webapp2.RequestHandler):
                 upper = True
             if i.islower(): #check for at least 1 lowercase
                 lower = True
+            if i.isdigit(): #check for at least 1 lowercase
+                digit = True
 
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
 
         if lower == False:
             errorList.append("Password must contain at least 1 lowercase letter")
+
+        if digit == False:
+            errorList.append("Password must contain at least 1 number")
             
         if(result != [] and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):  
            for i in result:
@@ -262,6 +282,9 @@ class RegisterHandler(webapp2.RequestHandler):
 
     def post(self):
         length = 5
+        digit = False
+        uspace = False
+        pspace = False
         upper = False
         lower = False
         userid = cgi.escape(self.request.get('userid'))
@@ -298,12 +321,29 @@ class RegisterHandler(webapp2.RequestHandler):
                 upper = True
             if i.islower(): #check for at least 1 lowercase
                 lower = True
+            if i.isdigit(): #check for at least 1 digit
+                digit = True
+            if i == ' ': #check for at least 1 digit
+                pspace = True
+
+        for i in userid:
+            if i == ' ': #check for at least 1 digit
+                uspace = True
 
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
 
         if lower == False:
             errorList.append("Password must contain at least 1 lowercase letter")
+
+        if digit == False:
+            errorList.append("Password must contain at least 1 number")
+        
+        if uspace == True:
+            errorList.append("User ID cannot have a space")
+        
+        if pspace == True:
+            errorList.append("Password cannot have a space")
 
 
         # Does the userid already exist in the "pending" datastore or in "confirmed"?        
@@ -313,7 +353,7 @@ class RegisterHandler(webapp2.RequestHandler):
         result2 = idExistC.fetch()
 
         # Add registration details to "pending" datastore.
-        if(result1 == [] and result2 == [] and  userid != ""  and email != ""  and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):               
+        if(result1 == [] and result2 == [] and  userid != ""  and email != "" and uspace == False and pspace == False and passwd == passwd2 and upper == True and lower == True and digit == True and len(passwd) >= length):               
             person = UserDetailP()
             person.userid = userid
             person.email = email
@@ -328,7 +368,7 @@ class RegisterHandler(webapp2.RequestHandler):
             Thank you for creating an account! Please confirm your email address by
             clicking on the link below:
 
-            http://a2-c00157339.appspot.com/verify?type=""" + person.userid
+            http://localhost:8080/verify?type=""" + person.userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             errorList.append("Success check your email")
