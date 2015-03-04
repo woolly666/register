@@ -8,6 +8,7 @@ import os
 import cgi
 import webapp2
 import jinja2
+import time
 
 from google.appengine.ext import ndb
 from google.appengine.api import mail
@@ -28,6 +29,7 @@ class UserDetailC(ndb.Model):
     userid = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
     passwd = ndb.StringProperty(required=True) 
+    changeReq = ndb.StringProperty(required=True) 
 
 JINJA = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -87,7 +89,11 @@ class LoginHandler(webapp2.RequestHandler):
 #confirm account, put in the confirmed store and remove from pending store
 class ConfirmHandler(webapp2.RequestHandler):
     def get(self):
-        userid = self.request.get('type')
+        session = get_current_session()
+        template = JINJA.get_template('login.html')
+        userid = cgi.escape(self.request.get('type'), quote = True)
+        passwd = cgi.escape('', quote = True)
+        message = ''
         idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
         result = idExistP.fetch()
 
@@ -101,16 +107,25 @@ class ConfirmHandler(webapp2.RequestHandler):
             personC.userid = userid
             personC.email = email
             personC.passwd = passwd
+            personC.changeReq = "False"
             personC.put()
+            passwd = ''
             
             pending = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
             entry = pending.fetch()
             for i in entry:
                 i.key.delete()
-            self.response.write('Confirmed you may now login')
+            message = 'Confirmed you may now login'
+            self.response.write(template.render(
+                { 'the_title': 'Welcome to the Login Page'} 
+            )% (userid,passwd,message))
+            
 
         else:
-            self.response.write('Already confirmed or not a valid link')
+            message = 'Already confirmed or not a valid link'
+            self.response.write(template.render(
+                { 'the_title': 'Welcome to the Login Page'} 
+            )% (userid,passwd,message))
 
 class ResetHandler(webapp2.RequestHandler):
     def post(self):
@@ -122,10 +137,13 @@ class ResetHandler(webapp2.RequestHandler):
         # Lookup login ID in "confirmed" datastore and Check for password match..
         idConfirmed = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1 AND email = :2", session['userid'] ,session['email'])
         result = idConfirmed.fetch()
-
-        print(result)
             
         if result != []: # Email
+            for i in result:
+                personC = i
+                personC.changeReq = "True"
+                personC.put()
+
             # Send confirmation email.
             sender_address = "Awsome Support <leewolohan20@gmail.com>"
             user_address = "Email <" + session['email'] + ">"
@@ -134,6 +152,7 @@ class ResetHandler(webapp2.RequestHandler):
 
             mail.send_mail(sender_address, user_address, subject, body)
             session.terminate()
+            session['message'] = 'Check your email'
             self.redirect('/login')
 
         else:
@@ -145,19 +164,19 @@ class ResetHandler(webapp2.RequestHandler):
         message = cgi.escape(session.get('message',''), quote = True)
         template = JINJA.get_template('reset1.html')
         self.response.write(template.render(
-            { 'the_title': 'Welcome to the Login Page'} 
+            { 'the_title': 'Welcome to the Reset Page'} 
         )% (message))
 
 class Reset2Handler(webapp2.RequestHandler):
     def get(self):
         session = get_current_session()
-        userid = self.request.get('type')
-        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", userid)
+        session['userid'] = self.request.get('type')
+        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", session['userid'])
         session['result'] = idExistC.fetch()
-        #print(session['result'])
-
         message = cgi.escape(session.get('message',''), quote = True)
+
         template = JINJA.get_template('reset2.html')
+
         self.response.write(template.render(
             { 'the_title': 'Welcome to the Reset Page'} 
         )% (message))
@@ -165,6 +184,7 @@ class Reset2Handler(webapp2.RequestHandler):
     def post(self):
         session = get_current_session()
         length = 5
+        digit = False
         upper = False
         lower = False
         passwd = self.request.get('passwd')
@@ -191,27 +211,37 @@ class Reset2Handler(webapp2.RequestHandler):
                 upper = True
             if i.islower(): #check for at least 1 lowercase
                 lower = True
+            if i.isdigit(): #check for at least 1 lowercase
+                digit = True
 
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
 
         if lower == False:
             errorList.append("Password must contain at least 1 lowercase letter")
+
+        if digit == False:
+            errorList.append("Password must contain at least 1 number")
             
         if(result != [] and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):  
            for i in result:
               personC = i
-              personC.userid = i.userid
-              personC.email = i.email
-              personC.passwd = passwd
-              personC.put()
-
-           session.terminate()
-           self.redirect('/login')
+              if personC.changeReq == "True":
+                  personC.userid = i.userid
+                  personC.email = i.email
+                  personC.passwd = passwd
+                  personC.changeReq = "False"
+                  personC.put()
+                  self.redirect('login')
+              else:
+                  session['message'] = 'A change of password was not requested'
+                  self.redirect('/login')
+                  #session.terminate()
 
         else:
            session['message'] = ','.join(errorList)
-           self.redirect('/change') 
+           userid = session['userid']
+           self.redirect('/change?type=' + userid)
 
 class LogoutHandler(webapp2.RequestHandler): #logout and clear the session
     def post(self):
@@ -262,6 +292,10 @@ class RegisterHandler(webapp2.RequestHandler):
 
     def post(self):
         length = 5
+        digit = False
+        uspace = False
+        pspace = False
+        espace = False
         upper = False
         lower = False
         userid = cgi.escape(self.request.get('userid'))
@@ -298,6 +332,18 @@ class RegisterHandler(webapp2.RequestHandler):
                 upper = True
             if i.islower(): #check for at least 1 lowercase
                 lower = True
+            if i.isdigit(): #check for at least 1 digit
+                digit = True
+            if i == ' ': #check for at least 1 digit
+                pspace = True
+
+        for i in userid:
+            if i == ' ': #check for at least 1 digit
+                uspace = True
+
+        for i in email:
+            if i == ' ': #check for at least 1 digit
+                espace = True
 
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
@@ -305,15 +351,27 @@ class RegisterHandler(webapp2.RequestHandler):
         if lower == False:
             errorList.append("Password must contain at least 1 lowercase letter")
 
+        if digit == False:
+            errorList.append("Password must contain at least 1 number")
+        
+        if uspace == True:
+            errorList.append("User ID cannot have a space")
+        
+        if pspace == True:
+            errorList.append("Password cannot have a space")
+
+        if espace == True:
+            errorList.append("Email cannot have a space")
+
 
         # Does the userid already exist in the "pending" datastore or in "confirmed"?        
-        idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", session['userid'])
-        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", session['userid'])
+        idExistP = ndb.gql("SELECT * FROM UserDetailP WHERE userid = :1", userid)
+        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", userid)
         result1 = idExistP.fetch()
         result2 = idExistC.fetch()
 
         # Add registration details to "pending" datastore.
-        if(result1 == [] and result2 == [] and  userid != ""  and email != ""  and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):               
+        if(result1 == [] and result2 == [] and  userid != ""  and email != "" and uspace == False and espace == False and pspace == False and passwd == passwd2 and upper == True and lower == True and digit == True and len(passwd) >= length):               
             person = UserDetailP()
             person.userid = userid
             person.email = email

@@ -29,6 +29,7 @@ class UserDetailC(ndb.Model):
     userid = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
     passwd = ndb.StringProperty(required=True) 
+    changeReq = ndb.StringProperty(required=True) 
 
 JINJA = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -106,6 +107,7 @@ class ConfirmHandler(webapp2.RequestHandler):
             personC.userid = userid
             personC.email = email
             personC.passwd = passwd
+            personC.changeReq = "False"
             personC.put()
             passwd = ''
             
@@ -135,10 +137,13 @@ class ResetHandler(webapp2.RequestHandler):
         # Lookup login ID in "confirmed" datastore and Check for password match..
         idConfirmed = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1 AND email = :2", session['userid'] ,session['email'])
         result = idConfirmed.fetch()
-
-        print(result)
             
         if result != []: # Email
+            for i in result:
+                personC = i
+                personC.changeReq = "True"
+                personC.put()
+
             # Send confirmation email.
             sender_address = "Awsome Support <leewolohan20@gmail.com>"
             user_address = "Email <" + session['email'] + ">"
@@ -165,13 +170,13 @@ class ResetHandler(webapp2.RequestHandler):
 class Reset2Handler(webapp2.RequestHandler):
     def get(self):
         session = get_current_session()
-        userid = self.request.get('type')
-        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", userid)
+        session['userid'] = self.request.get('type')
+        idExistC = ndb.gql("SELECT * FROM UserDetailC WHERE userid = :1", session['userid'])
         session['result'] = idExistC.fetch()
-        #print(session['result'])
-
         message = cgi.escape(session.get('message',''), quote = True)
+
         template = JINJA.get_template('reset2.html')
+
         self.response.write(template.render(
             { 'the_title': 'Welcome to the Reset Page'} 
         )% (message))
@@ -179,7 +184,7 @@ class Reset2Handler(webapp2.RequestHandler):
     def post(self):
         session = get_current_session()
         length = 5
-        Digit = False
+        digit = False
         upper = False
         lower = False
         passwd = self.request.get('passwd')
@@ -221,17 +226,23 @@ class Reset2Handler(webapp2.RequestHandler):
         if(result != [] and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):  
            for i in result:
               personC = i
-              personC.userid = i.userid
-              personC.email = i.email
-              personC.passwd = passwd
-              personC.put()
-
-           session.terminate()
-           self.redirect('/login')
+              if personC.changeReq == "True":
+                  personC.userid = i.userid
+                  personC.email = i.email
+                  personC.passwd = passwd
+                  personC.changeReq = "False"
+                  personC.put()
+                  session['message'] = 'Password changed'
+                  self.redirect('login')
+              else:
+                  session['message'] = 'A change of password was not requested'
+                  self.redirect('/login')
+                  #session.terminate()
 
         else:
            session['message'] = ','.join(errorList)
-           self.redirect('/change') 
+           userid = session['userid']
+           self.redirect('/change?type=' + userid)
 
 class LogoutHandler(webapp2.RequestHandler): #logout and clear the session
     def post(self):
