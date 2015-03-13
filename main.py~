@@ -47,7 +47,7 @@ class LoginHandler(webapp2.RequestHandler):
         template = JINJA.get_template('login.html')
         self.response.write(template.render(
             { 'the_title': 'Welcome to the Login Page'} 
-        ) % (userid,passwd,message))
+        ) % (userid,message))
         pass
 
     def post(self):
@@ -118,14 +118,14 @@ class ConfirmHandler(webapp2.RequestHandler):
             message = 'Confirmed you may now login'
             self.response.write(template.render(
                 { 'the_title': 'Welcome to the Login Page'} 
-            )% (userid,passwd,message))
+            )% (userid,message))
             
 
         else:
             message = 'Already confirmed or not a valid link'
             self.response.write(template.render(
                 { 'the_title': 'Welcome to the Login Page'} 
-            )% (userid,passwd,message))
+            )% (userid,message))
 
 class ResetHandler(webapp2.RequestHandler):
     def post(self):
@@ -187,6 +187,7 @@ class Reset2Handler(webapp2.RequestHandler):
         digit = False
         upper = False
         lower = False
+        pspace = False
         passwd = self.request.get('passwd')
         passwd2 = self.request.get('confirmed')
         errorList = []
@@ -213,6 +214,9 @@ class Reset2Handler(webapp2.RequestHandler):
                 lower = True
             if i.isdigit(): #check for at least 1 lowercase
                 digit = True
+            if i == ' ': #check for a space
+                pspace = True
+            
 
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
@@ -222,8 +226,11 @@ class Reset2Handler(webapp2.RequestHandler):
 
         if digit == False:
             errorList.append("Password must contain at least 1 number")
+        
+        if pspace == True:
+            errorList.append("Password cannot have a space")
             
-        if(result != [] and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):  
+        if(result != [] and passwd == passwd2 and pspace == False and upper == True and lower == True and len(passwd) >= length):  
            for i in result:
               personC = i
               if personC.changeReq == "True":
@@ -232,11 +239,11 @@ class Reset2Handler(webapp2.RequestHandler):
                   personC.passwd = passwd
                   personC.changeReq = "False"
                   personC.put()
+                  session['message'] = 'Password changed'
                   self.redirect('login')
               else:
                   session['message'] = 'A change of password was not requested'
                   self.redirect('/login')
-                  #session.terminate()
 
         else:
            session['message'] = ','.join(errorList)
@@ -334,7 +341,7 @@ class RegisterHandler(webapp2.RequestHandler):
                 lower = True
             if i.isdigit(): #check for at least 1 digit
                 digit = True
-            if i == ' ': #check for at least 1 digit
+            if i == ' ': #check for a space
                 pspace = True
 
         for i in userid:

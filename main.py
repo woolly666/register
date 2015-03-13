@@ -47,7 +47,7 @@ class LoginHandler(webapp2.RequestHandler):
         template = JINJA.get_template('login.html')
         self.response.write(template.render(
             { 'the_title': 'Welcome to the Login Page'} 
-        ) % (userid,passwd,message))
+        ) % (userid,message))
         pass
 
     def post(self):
@@ -118,14 +118,14 @@ class ConfirmHandler(webapp2.RequestHandler):
             message = 'Confirmed you may now login'
             self.response.write(template.render(
                 { 'the_title': 'Welcome to the Login Page'} 
-            )% (userid,passwd,message))
+            )% (userid,message))
             
 
         else:
             message = 'Already confirmed or not a valid link'
             self.response.write(template.render(
                 { 'the_title': 'Welcome to the Login Page'} 
-            )% (userid,passwd,message))
+            )% (userid,message))
 
 class ResetHandler(webapp2.RequestHandler):
     def post(self):
@@ -148,7 +148,7 @@ class ResetHandler(webapp2.RequestHandler):
             sender_address = "Awsome Support <leewolohan20@gmail.com>"
             user_address = "Email <" + session['email'] + ">"
             subject = "Reset your password"
-            body = """http://a2-c00157339.appspot.com/change?type=""" + userid
+            body = """http://localhost:8080/change?type=""" + userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             session.terminate()
@@ -187,6 +187,7 @@ class Reset2Handler(webapp2.RequestHandler):
         digit = False
         upper = False
         lower = False
+        pspace = False
         passwd = self.request.get('passwd')
         passwd2 = self.request.get('confirmed')
         errorList = []
@@ -213,6 +214,9 @@ class Reset2Handler(webapp2.RequestHandler):
                 lower = True
             if i.isdigit(): #check for at least 1 lowercase
                 digit = True
+            if i == ' ': #check for a space
+                pspace = True
+            
 
         if upper == False:
             errorList.append("Password must contain at least 1 uppercase letter")
@@ -222,8 +226,11 @@ class Reset2Handler(webapp2.RequestHandler):
 
         if digit == False:
             errorList.append("Password must contain at least 1 number")
+        
+        if pspace == True:
+            errorList.append("Password cannot have a space")
             
-        if(result != [] and passwd == passwd2 and upper == True and lower == True and len(passwd) >= length):  
+        if(result != [] and passwd == passwd2 and pspace == False and upper == True and lower == True and len(passwd) >= length):  
            for i in result:
               personC = i
               if personC.changeReq == "True":
@@ -237,7 +244,6 @@ class Reset2Handler(webapp2.RequestHandler):
               else:
                   session['message'] = 'A change of password was not requested'
                   self.redirect('/login')
-                  #session.terminate()
 
         else:
            session['message'] = ','.join(errorList)
@@ -335,7 +341,7 @@ class RegisterHandler(webapp2.RequestHandler):
                 lower = True
             if i.isdigit(): #check for at least 1 digit
                 digit = True
-            if i == ' ': #check for at least 1 digit
+            if i == ' ': #check for a space
                 pspace = True
 
         for i in userid:
@@ -387,7 +393,7 @@ class RegisterHandler(webapp2.RequestHandler):
             Thank you for creating an account! Please confirm your email address by
             clicking on the link below:
 
-            http://a2-c00157339.appspot.com/verify?type=""" + person.userid
+            http://localhost:8080/verify?type=""" + person.userid
 
             mail.send_mail(sender_address, user_address, subject, body)
             errorList.append("Success check your email")
